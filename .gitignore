@@ -1,0 +1,12 @@
+*.pyc
+*.csv
+*.jpg
+*.json
+keys/
+last/
+loc/
+time/
+model/
+inputs/
+obs/
+runtime/lastloc.txt
