@@ -153,29 +153,13 @@ def plotReavML(evento,vol,exec_point):
     os.remove('figs/loc_'+str(idev)+'.png')
     os.remove('last/lastlocREAVmap.png')
     
-    #jpg.save('figs/'+str(evento.evento.iloc[0])+'.jpg')
-    #import os
-    #os.remove(raiz+'loc_'+str(idev)+'.png')
-    #plt.close('all')
-        
-    #import os
     
-    #plt.savefig(raiz+'loc_'+str(idev)+'.png')
-    #jpg = Image.open(raiz+'loc_'+str(idev)+'.png')
-    #jpg = jpg.convert('RGB')
-    ##jpg.save(raiz+'figs/loc_'+str(idev)+'.jpg') 
-    #jpg.save(raiz+'last/lastloc.png')     
-
-             
-    #os.remove(raiz+'loc_'+str(idev)+'.png')
-
-    #guardar en subcarpeta figs
-    #jpg.save('figs/loc_'+str(idev)+'.jpg')
-    #jpg.save('last/lastloc.png')    
-       
-    #import os
-    #os.remove('test.png')
     
+    plt.close('all')
+
+
+    jpg.save(raiz+'figs/loc_'+str(idev)+'.jpg') 
+    jpg.save(raiz+'last/lastloc.png')  
     
     
     
@@ -209,7 +193,7 @@ def coloresCla(tipoev):
 
 
 
-def truncateColormap(cmap, minval=0.0, maxval=1.0, n=100):
+def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
     import matplotlib
     import numpy as np
     new_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
@@ -325,11 +309,11 @@ def plotNLLmapREAV(evento,voldata,exec_point,anch=80,ms=10,op=''):
     mapa = plt.axes(projection=ccrs.PlateCarree())
     mapa.set_extent([lonv-londelta,lonv+londelta,latv-latdelta,latv+latdelta],crs=ccrs.PlateCarree())
     if exec_point=='server': 
-        archigrd = Dataset('/home/nc/'+str(voldata.id_zona.values[0])+'/'+str(voldata.cod.values[0])+'.nc')
+        archigrd = Dataset('/home/sismologia/nc/'+str(voldata.id_zona.values[0])+'/'+str(voldata.cod.values[0])+'.nc')
     else:
         archigrd = Dataset('C:/nc/'+str(voldata.id_zona.values[0])+'/'+str(voldata.cod.values[0])+'.nc') #Lee el archivo
     hei = archigrd.variables['z'][:] #lee lat,lon,z
-    cmap=truncateColormap(matplotlib.cm.get_cmap('gist_earth'),0,0.8)
+    cmap=truncate_colormap(matplotlib.cm.get_cmap('gist_earth'),0,0.8)
     ls = LightSource(azdeg = 180, altdeg = 60)
     rgb = ls.shade(hei, cmap=cmap)
     #ax = plt.axes( projection=ccrs.PlateCarree())
@@ -455,13 +439,7 @@ def plot_NLL(voldf,hypo,NLL,evsel,strid,exec_point):
     erlonN =cat[0].origins[0].longitude_errors.uncertainty
     erlatN =cat[0].origins[0].latitude_errors.uncertainty
     erproN = cat[0].origins[0].depth_errors.uncertainty/1000
-    def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
-        import matplotlib
-        import numpy as np
-        new_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
-            'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
-            cmap(np.linspace(minval, maxval, n)))
-        return new_cmap
+
     import pandas as pd
     from math import cos, radians
     PDF_lonlatXY= pd.read_csv('loc/'+str(idev)+'.scat.lonlat.XY',header=None,sep=' ')
@@ -477,6 +455,7 @@ def plot_NLL(voldf,hypo,NLL,evsel,strid,exec_point):
     latdelta = londelta/aspect_ratio
     
     import matplotlib.pyplot as plt
+    plt.style.use('seaborn-darkgrid')
     import matplotlib.gridspec as gridspec
     import cartopy.crs as ccrs
     fig = plt.figure(figsize=(16,9))
@@ -527,9 +506,12 @@ def plot_NLL(voldf,hypo,NLL,evsel,strid,exec_point):
     d_y = geopy.distance.distance(kilometers=hypo[4]*2)
     step = d_y.destination(point=origin, bearing=0)
     erlatH=step[0]-hypo[1]
-    scat = mapa1.scatter(df_PDF['lon'],df_PDF['lat'],s=1,c=df_PDF['PDF'])    
-    mapa1_proflat.scatter(df_PDF['prof'],df_PDF['lat'],s=1,c=df_PDF['PDF'])
-    mapa1_proflon.scatter(df_PDF['lon'],df_PDF['prof'],s=1,c=df_PDF['PDF'])    
+    
+    cmapscat = matplotlib.cm.get_cmap('plasma')
+    
+    scat = mapa1.scatter(df_PDF['lon'],df_PDF['lat'],s=1,c=df_PDF['PDF'],cmap=cmapscat)    
+    mapa1_proflat.scatter(df_PDF['prof'],df_PDF['lat'],s=1,c=df_PDF['PDF'],cmap=cmapscat)
+    mapa1_proflon.scatter(df_PDF['lon'],df_PDF['prof'],s=1,c=df_PDF['PDF'],cmap=cmapscat)    
     
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 

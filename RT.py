@@ -5,7 +5,7 @@ Created on Fri Sep 30 09:27:34 2022
 @author: sergio.morales
 """
 debug = True
-mlreav=2
+mlreav=0.1
 location='local'
 
 
