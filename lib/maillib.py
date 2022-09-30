@@ -104,7 +104,7 @@ def send_message(service, destination, obj, body, attachments=[]):
     ).execute()
 
 
-def sendMail(voldf,evsel):
+def sendMail(voldf,evsel,tipomail,debug):
     import numpy as np
     #volcan=voldf.nombre_db.iloc[0]
     idev = evsel.idevento.iloc[0]
@@ -117,37 +117,56 @@ def sendMail(voldf,evsel):
     ML= evsel.ml.iloc[0]
     volcan_real = voldf.nombre.iloc[0]
     tipo = voldf.vol_tipo.iloc[0]
-    #lista_debug=['sergiomoralesmendez@gmail.com','sergio.morales@sernageomin.cl']
-    lista_real = ['sergiomoralesmendez@gmail.com',
-                    'sergio.morales@sernageomin.cl',
-                    'luis.franco@sernageomin.cl',
-                    'fernando.gil@sernageomin.cl',
-                    'carlos.cardona@sernageomin.cl',
-                    'paola.pena@sernageomin.cl',
-                    'oscar.valderrama@sernageomin.cl',
-                    'jonathan.quijada@sernageomin.cl',
-                    'juan.sanmartin@sernageomin.cl',
-                    'monitoreo1@sernageomin.cl',
-                    'monitoreo2@sernageomin.cl',
-                    'monitoreo3@sernageomin.cl'
-                    ]
-    asunto="Sismo tipo "+tipoev+" ML="+str(ML)+" "+tipo+" "+volcan_real
+    if debug==True:
+        lista=['sergiomoralesmendez@gmail.com','sergio.morales@sernageomin.cl']
+    else:
+        lista = ['sergiomoralesmendez@gmail.com',
+                        'sergio.morales@sernageomin.cl',
+                        'luis.franco@sernageomin.cl',
+                        'fernando.gil@sernageomin.cl',
+                        'carlos.cardona@sernageomin.cl',
+                        'paola.pena@sernageomin.cl',
+                        'oscar.valderrama@sernageomin.cl',
+                        'jonathan.quijada@sernageomin.cl',
+                        'juan.sanmartin@sernageomin.cl',
+                        'monitoreo1@sernageomin.cl',
+                        'monitoreo2@sernageomin.cl',
+                        'monitoreo3@sernageomin.cl'
+                        ]
+
   
-    
-    cuerpo = """\nSismo localizado en el {tipov} {volcan}:
-    \nTipo Evento: {tipo}
-Magnitud : {ml} (ML)
-Amplitud: {amplitud} um/s (referencia)
-Frecuencia: {frecuencia} Hz (Referencia)
-Profundidad: {profundidad} km bajo nivel del mar
-Latitud: {latitud}°
-Longitud: {longitud}°
-\nSe adjunta imagen correspondiente a localización con Hypo71 realizada en la sala de monitoreo y localización usando NLL en base a las fases P y S detectadas por los especialistas.
-\nSaludos.
-\n(Este correo es automático, no responder)
-    """
-    cuerpo = cuerpo.format(tipo=tipoev,ml=ML,tipov=tipo,volcan=volcan_real,amplitud=amp,frecuencia=frec,profundidad=np.round(prof,1),
-                           latitud=np.round(lat,2),longitud=np.round(lon,2))
-    for destino in lista_real:
+    if tipomail=='REAV':
+        asunto="PRUEBA - REAV "+tipoev+" ML="+str(ML)+" "+tipo+" "+volcan_real+" - PRUEBA"
+        cuerpo = """\nSismo localizado en el {tipov} {volcan}:
+        \nTipo Evento: {tipo}
+    Magnitud : {ml} (ML)
+    Amplitud: {amplitud} um/s (referencia)
+    Frecuencia: {frecuencia} Hz (Referencia)
+    Profundidad: {profundidad} km bajo nivel del mar
+    Latitud: {latitud}°
+    Longitud: {longitud}°
+    \nSe adjunta Propuesta de REAV.
+    \nSaludos.
+    \n(Este correo es automático, no responder)
+        """
+        cuerpo = cuerpo.format(tipo=tipoev,ml=ML,tipov=tipo,volcan=volcan_real,amplitud=amp,frecuencia=frec,profundidad=np.round(prof,1),
+                               latitud=np.round(lat,2),longitud=np.round(lon,2))
+    elif tipomail=='normal':
+        asunto="Sismo tipo "+tipoev+" ML="+str(ML)+" "+tipo+" "+volcan_real
+        cuerpo = """\nSismo localizado en el {tipov} {volcan}:
+        \nTipo Evento: {tipo}
+    Magnitud : {ml} (ML)
+    Amplitud: {amplitud} um/s (referencia)
+    Frecuencia: {frecuencia} Hz (Referencia)
+    Profundidad: {profundidad} km bajo nivel del mar
+    Latitud: {latitud}°
+    Longitud: {longitud}°
+    \nSe adjunta imagen correspondiente a localización con Hypo71 realizada en la sala de monitoreo y localización usando NLL en base a las fases P y S detectadas por los especialistas.
+    \nSaludos.
+    \n(Este correo es automático, no responder)
+        """
+        cuerpo = cuerpo.format(tipo=tipoev,ml=ML,tipov=tipo,volcan=volcan_real,amplitud=amp,frecuencia=frec,profundidad=np.round(prof,1),
+                               latitud=np.round(lat,2),longitud=np.round(lon,2))        
+    for destino in lista:
         print(destino)
         send_message(gmail_authenticate(), destino, asunto,cuerpo,['figs/loc_'+str(idev)+'.jpg']) 

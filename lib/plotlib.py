@@ -8,6 +8,260 @@ Created on Wed Sep 28 16:08:02 2022
 blacklist=['NADA']
 blacklist2=['NADA']
 
+def isDST(dt=None, timezone="UTC"):
+    import pytz
+    from datetime import datetime
+    if dt is None:
+        dt = datetime.utcnow()
+    timezone = pytz.timezone(timezone)
+    timezone_aware_date = timezone.localize(dt, is_dst=None)
+    return timezone_aware_date.tzinfo._dst.seconds != 0
+
+def plotReavML(evento,vol,exec_point):
+    plotNLLmapREAV(evento,vol,exec_point)
+    import matplotlib.pyplot as plt
+    from matplotlib import font_manager
+    import matplotlib.gridspec as gridspec
+    from PIL import Image
+    import numpy as np
+    font_robotoRegular = font_manager.FontProperties(fname='fonts/Roboto-Regular.ttf')
+    font_robotoLight = font_manager.FontProperties(fname='fonts/Roboto-Light.ttf')
+    font_robotoBold = font_manager.FontProperties(fname='fonts/Roboto-Bold.ttf')
+
+    mda = ["01","02","03","04","05","06","07","08","09","10","11","12" ]
+    mda_str = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre" ]
+    DICT_mes = dict(zip(mda,mda_str))
+    
+    import datetime as dt
+    
+    
+    hv=isDST(timezone='Chile/Continental')
+    if hv==True:hvf=-3
+    else:hvf=-4
+   
+    fecha=evento.fecha.iloc[0]
+    tipoes=vol.vol_tipo.values[0]
+    volcan_re=vol.nombre.values[0]
+    lat_ev=evento.latitud.values[0]
+    lon_ev=evento.longitud.values[0]
+    ML=evento.ml.values[0]
+    fenomeno='Sismo con magnitud destacada ('+evento.tipoevento.iloc[0]+')'
+    hoy_local = dt.datetime.utcnow() + dt.timedelta(hours=hvf)
+    evento['profundidad_abs']=evento.profundidad.iloc[0]-vol.nref.iloc[0]/1000
+    prof_ev=evento.profundidad_abs.values[0]
+    fecha_dt = dt.datetime.strftime(fecha,'%H%M')
+    hora_loc = fecha_dt[0:2]
+    min_loc = fecha_dt[2:]
+    min_loc_hl = min_loc
+    hora_loc_hl = str(int(hora_loc)+hvf)
+    if hora_loc_hl =="-1":
+        hora_loc_hl = "23"
+    elif hora_loc_hl =="-2":
+        hora_loc_hl = "22"
+    elif hora_loc_hl =="-3":
+        hora_loc_hl = "21"
+    elif hora_loc_hl =="-4":
+        hora_loc_hl = "20"
+
+    #ri = str(random.randint(1,9999999)+evento.idevento.iloc[0])
+
+
+    fig = plt.figure(figsize=(16,9))
+    
+    gs0 = gridspec.GridSpec(1,3, figure=fig,width_ratios=[1,1,3])
+    gs00 = gs0[0].subgridspec(3, 3)
+    gs01 = gs0[1].subgridspec(3, 3)
+    gs02 = gs0[2].subgridspec(3, 3)
+
+    ax_title = fig.add_subplot(gs01[:, :])
+    ax_title.text(1.4,1,'Reporte Especial de Sismicidad Volcánica', fontproperties=font_robotoBold,fontsize=25,ha='center')
+    ax_title.text(1.4,0.94,tipoes+' '+volcan_re, fontproperties=font_robotoLight,fontsize=25,ha='center')
+    ax_title.text(1.4,0.88,('Fecha del reporte: '+hoy_local.strftime("%d")+" de "+DICT_mes[hoy_local.strftime("%m")]+
+                            " de "+hoy_local.strftime("%Y")+", "+hoy_local.strftime("%H")+":"+
+                            hoy_local.strftime("%M")+" Hora local (Chile continental)"),
+                           fontproperties=font_robotoLight,fontsize=15,ha='center')
+    
+    ax_izq = fig.add_subplot(gs00[:, :])
+
+    ax_izq.text(-0.2,0.84,'Agencia:',fontproperties=font_robotoRegular,fontsize=20,ha='left')
+    ax_izq.text(0.1,0.78,'Ovdas - RNVV - Sernageomin',
+                fontproperties=font_robotoBold,fontsize=20,ha='left')
+    
+    ax_izq.text(-0.2,0.72,'Fenómeno:',fontproperties=font_robotoRegular,fontsize=20,ha='left')
+    ax_izq.text(0.1,0.66,fenomeno,
+                fontproperties=font_robotoBold,fontsize=20,ha='left')
+    
+    ax_izq.text(-0.2,0.62,'Tiempo origen:',fontproperties=font_robotoRegular,fontsize=20,ha='left')
+    ax_izq.text(0.1,0.56,dt.datetime.strftime(fecha,'%Y-%m-%d %H:%M:%S')+ " UTC ("+hora_loc_hl+":"+min_loc_hl+" hora local)",
+                fontproperties=font_robotoBold,fontsize=20,ha='left')
+    
+    ax_izq.text(-0.2,0.5,'Latitud:',fontproperties=font_robotoRegular,fontsize=20,ha='left')
+    ax_izq.text(0.1,0.44,str(lat_ev).replace(".",",")[1:7]+u"\xb0 Sur",
+                fontproperties=font_robotoBold,fontsize=20,ha='left')
+    
+    ax_izq.text(-0.2,0.38,'Longitud:',fontproperties=font_robotoRegular,fontsize=20,ha='left')
+    ax_izq.text(0.1,0.32,str(lon_ev).replace(".",",")[1:7]+u"\xb0 Oeste",
+                fontproperties=font_robotoBold,fontsize=20,ha='left')
+    
+    if prof_ev>=0:
+        textoprof=str(np.round(prof_ev,1)).replace('.',',')+' km bajo nivel del mar'
+    else:
+        textoprof=str(np.round(prof_ev,1)*-1).replace('.',',')+' km sobre nivel del mar'
+    ax_izq.text(-0.2,0.26,'Profundidad:',fontproperties=font_robotoRegular,fontsize=20,ha='left')
+    ax_izq.text(0.1,0.2,textoprof,
+                fontproperties=font_robotoBold,fontsize=20,ha='left')
+    
+    ax_izq.text(-0.2,0.14,'Magnitud:',fontproperties=font_robotoRegular,fontsize=20,ha='left')
+    ax_izq.text(0.1,0.08,str(ML).replace(".",",")+' ($\mathregular{M_L}$)',
+                fontproperties=font_robotoBold,fontsize=20,ha='left')
+
+
+
+    idev = evento.idevento.iloc[0]
+
+
+    mapa = plt.imread('figs/loc_'+str(idev)+'.jpg')
+    ax_mapa = fig.add_subplot(gs02[:, :])
+    ax_mapa.imshow(mapa)
+    ax_mapa.axis('off')
+    ax_izq.axis('off')
+    ax_title.axis('off')
+    plt.savefig('figs/tempreav.png',dpi=120, transparent=True)
+
+    #unir imagenes
+    background = Image.open(("static/background.png"))
+    overlay = Image.open("figs/tempreav.png")
+    background.paste(overlay, (0, 0), overlay)
+    
+    if exec_point == 'local':
+        raiz='//172.16.40.102/Monitoreo/ovv2023/'
+    elif exec_point == 'server':
+        raiz='/mnt/puntocientodos/ovv2023/' 
+        
+    
+    background.save('figs/loc_'+str(idev)+'.png')
+     
+    
+    import os
+
+    jpg = Image.open('figs/loc_'+str(idev)+'.png')
+    jpg = jpg.convert('RGB')    
+    jpg.save('figs/loc_'+str(idev)+'.jpg')
+    jpg.save('last/lastlocREAV.jpg')
+    
+    os.remove('figs/tempreav.png')
+    os.remove('figs/loc_'+str(idev)+'.png')
+    os.remove('last/lastlocREAVmap.png')
+    
+    #jpg.save('figs/'+str(evento.evento.iloc[0])+'.jpg')
+    #import os
+    #os.remove(raiz+'loc_'+str(idev)+'.png')
+    #plt.close('all')
+        
+    #import os
+    
+    #plt.savefig(raiz+'loc_'+str(idev)+'.png')
+    #jpg = Image.open(raiz+'loc_'+str(idev)+'.png')
+    #jpg = jpg.convert('RGB')
+    ##jpg.save(raiz+'figs/loc_'+str(idev)+'.jpg') 
+    #jpg.save(raiz+'last/lastloc.png')     
+
+             
+    #os.remove(raiz+'loc_'+str(idev)+'.png')
+
+    #guardar en subcarpeta figs
+    #jpg.save('figs/loc_'+str(idev)+'.jpg')
+    #jpg.save('last/lastloc.png')    
+       
+    #import os
+    #os.remove('test.png')
+    
+    
+    
+    
+    
+    
+    
+    
+def coloresCla(tipoev):
+    DICT_COL={
+        'VT': (1.00,0.00,0.00),
+        'VD': (1.00,0.00,1.00),
+        'LP': (1.00,1.00,0.00),
+        'LV': (0.67,0.67,0.00),
+        'TR': (0.00,1.00,1.00),
+        'TO': (0.39,0.39,0.00),
+        'HB': (1.00,0.55,0.00),
+        'AV': (0.59,1.00,0.59),
+        'IC': (0.00,1.00,0.00),
+        'RY': (0.00,0.69,0.00),
+        'EX': (0.00,0.39,0.00),
+        'MI': (0.71,0.00,0.80),
+        'BG': (0.00,0.00,1.00),
+        'VA': (0.39,0.39,0.39),
+        'RE': (0.69,0.69,0.69),
+        'ZZ': (1.00,0.39,0.39),
+        'MF': (1.00,0.75,0.00)
+        }
+    color= DICT_COL[tipoev]
+    return color
+
+
+
+
+def truncateColormap(cmap, minval=0.0, maxval=1.0, n=100):
+    import matplotlib
+    import numpy as np
+    new_cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+        cmap(np.linspace(minval, maxval, n)))
+    return new_cmap
+
+def scaleBar(ax, length=None, location=(0.2, 0.05), linewidth=2):
+    import numpy as np
+    from matplotlib import patheffects
+    buffer = [patheffects.withStroke(linewidth=2, foreground="w")]    
+    import cartopy.crs as ccrs
+    """
+    ax is the axes to draw the scalebar on.
+    length is the length of the scalebar in km.
+    location is center of the scalebar in axis coordinates.
+    (ie. 0.5 is the middle of the plot)
+    linewidth is the thickness of the scalebar.
+    """
+    #Get the limits of the axis in lat long
+    llx0, llx1, lly0, lly1 = ax.get_extent(ccrs.PlateCarree())
+    #Make tmc horizontally centred on the middle of the map,
+    #vertically at scale bar location
+    sbllx = (llx1 + llx0) / 2 
+    sblly = lly0 + (lly1 - lly0) * location[1]
+    tmc = ccrs.TransverseMercator(sbllx, sblly)
+    #Get the extent of the plotted area in coordinates in metres
+    x0, x1, y0, y1 = ax.get_extent(tmc)
+    #Turn the specified scalebar location into coordinates in metres
+    sbx = x0 + (x1 - x0) * location[0]
+    sby = y0 + (y1 - y0) * location[1]
+
+    #Calculate a scale bar length if none has been given
+    #(Theres probably a more pythonic way of rounding the number but this works)
+    if not length: 
+        length = (x1 - x0) / 5000 #in km
+        ndim = int(np.floor(np.log10(length))) #number of digits in number
+        length = round(length, -ndim) #round to 1sf
+        #Returns numbers starting with the list
+        def scale_number(x):
+            if str(x)[0] in ['1', '2', '5']: return int(x)        
+            else: return scale_number(x - 10 ** ndim)
+        length = scale_number(length) 
+
+    #Generate the x coordinate for the ends of the scalebar
+    bar_xs = [sbx - length * 500, sbx + length * 500]
+    #Plot the scalebar
+    ax.plot(bar_xs, [sby, sby], transform=tmc, color='k', linewidth=linewidth)
+    #Plot the scalebar label
+    ax.text(sbx, sby, str(length) + ' km', transform=tmc,
+            horizontalalignment='center', verticalalignment='bottom',path_effects=buffer,fontsize=20)
+    return buffer
 
 def obtener_evento(year,idev):
     import pandas as pd
@@ -48,7 +302,96 @@ def plotNLLinfo(evsel,exec_point):
     NLL=[lonNLL,latNLL,profNLL]
     plot_NLL(voldf,hypo,NLL,evsel,str(evento.idevento.iloc[0]),exec_point)
     
+def plotNLLmapREAV(evento,voldata,exec_point,anch=80,ms=10,op=''):
+    evsize=20
+    idev = evento.idevento.iloc[0]
+    a=evento
+    from matplotlib.colors import LightSource
+    import numpy as np
+    from netCDF4 import Dataset
+    import matplotlib.pyplot as plt
+    import cartopy.crs as ccrs
+    plt.style.use('seaborn-darkgrid')
+    import matplotlib
+    lonv,latv=float(voldata.longitud.values[0]),float(voldata.latitud.values[0])
+    kms=anch/4
+    fact=0.011*kms
+    latdelta=fact
+    if latv>-30: londelta=fact*(-0.0067*latv+1.018)
+    if latv<=-30:londelta=fact*(-0.021*latv+0.7115)
+    #km=1*kms
+    #test_deg=0.19   
+    figmapa = plt.figure(figsize=(7,5))
+    mapa = plt.axes(projection=ccrs.PlateCarree())
+    mapa.set_extent([lonv-londelta,lonv+londelta,latv-latdelta,latv+latdelta],crs=ccrs.PlateCarree())
+    if exec_point=='server': 
+        archigrd = Dataset('/home/nc/'+str(voldata.id_zona.values[0])+'/'+str(voldata.cod.values[0])+'.nc')
+    else:
+        archigrd = Dataset('C:/nc/'+str(voldata.id_zona.values[0])+'/'+str(voldata.cod.values[0])+'.nc') #Lee el archivo
+    hei = archigrd.variables['z'][:] #lee lat,lon,z
+    cmap=truncateColormap(matplotlib.cm.get_cmap('gist_earth'),0,0.8)
+    ls = LightSource(azdeg = 180, altdeg = 60)
+    rgb = ls.shade(hei, cmap=cmap)
+    #ax = plt.axes( projection=ccrs.PlateCarree())
+    mapa.imshow(rgb,extent=(float(min(archigrd.variables['x'])),float(max(archigrd.variables['x'])),
+                      float(min(archigrd.variables['y'])),float(max(archigrd.variables['y']))),
+          interpolation='None', alpha=0.6,origin='lower')
+    mapa.set_aspect('auto')
+    #FILTRAR EVENTOS LOCALIZADOS Y DENTRO DEL MAPA
+    aloc = a[a.ml.notnull()] #LOCALIZADOS (CON ML)
+    aloc = aloc[(aloc.latitud>mapa.get_ylim()[0]) & (aloc.latitud<mapa.get_ylim()[1])] #DENTRO DEL MAPA LAT
+    aloc = aloc[(aloc.longitud>mapa.get_xlim()[0]) & (aloc.longitud<mapa.get_xlim()[1])] #DENTRO DEL MAPA LON
+    print(str(len(aloc))+" eventos localizados en el periodo")
+    #REDONDEAR LAS ML AL ENTERO SUPERIOR
+    aloc.ml = np.ceil(aloc.ml) 
+    buffer = scaleBar(mapa, anch/4)
+
+    for index,row in aloc.iterrows(): 
+        x=float(row['longitud']);y=float(row['latitud'])
+        plt.plot(x,y,'.',ms=evsize,mfc=coloresCla(row['tipoevento']),mec='k',mew=0.3,alpha=0.7)
+
+    mapa.text(0.95,0.85, u'\u25B2\nN', transform = plt.gca().transAxes,fontsize=15,
+        horizontalalignment='center', verticalalignment='bottom',
+        path_effects=buffer, zorder=2)
+    gl =mapa.gridlines(draw_labels=True,
+                  linewidth=2, color='gray', alpha=0.5, linestyle='--')
+    import matplotlib.ticker as mticker
+    gl.top_labels = False
+    gl.right_labels = False
+    gl.xlocator = mticker.MultipleLocator(0.1)
+    gl.ylocator = mticker.MultipleLocator(0.1)
+    gl.xlabel_style = {'size': 15, 'color': 'k'}
+    gl.ylabel_style = {'size':15, 'color': 'k'}
     
+    from PIL import Image
+    
+    if exec_point == 'local':
+        raiz='//172.16.40.102/Monitoreo/ovv2023/'
+    elif exec_point == 'server':
+        raiz='/mnt/puntocientodos/ovv2023/' 
+        
+        
+    import os
+    
+    plt.savefig(raiz+'loc_'+str(idev)+'.png')
+    jpg = Image.open(raiz+'loc_'+str(idev)+'.png')
+    jpg = jpg.convert('RGB')
+    jpg.save(raiz+'figs/loc_'+str(idev)+'.jpg') 
+    jpg.save(raiz+'last/lastloc.png')     
+    
+             
+    os.remove(raiz+'loc_'+str(idev)+'.png')
+
+    #guardar en subcarpeta figs
+    jpg.save('figs/loc_'+str(idev)+'.jpg')
+    jpg.save('last/lastlocREAVmap.png')    
+       
+    plt.close('all')
+
+
+
+
+
 def plot_NLL(voldf,hypo,NLL,evsel,strid,exec_point):
     import numpy as np
     filename='loc/'+strid+'.hyp'

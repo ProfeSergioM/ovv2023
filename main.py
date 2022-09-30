@@ -4,11 +4,11 @@ Created on Wed Sep 28 12:56:46 2022
 
 @author: sergio.morales
 """
-def mainnll(exec_point,debug):
+def mainnll(exec_point,debug,mlreav):
     from lib.syslib import addPath
     from lib.dblib import getLastEv,saveNLLcsv
     from lib.nlllib import doNLL
-    from lib.plotlib import plotNLLinfo
+    from lib.plotlib import plotNLLinfo,plotReavML
     from lib.maillib import sendMail
     
     addPath(exec_point)
@@ -16,5 +16,14 @@ def mainnll(exec_point,debug):
     if reloc==True:
         NLL,estadf,hypo,voldf = doNLL(ev,exec_point,fini='',ffin='')
         saveNLLcsv(voldf, ev, NLL, exec_point)
-        plotNLLinfo(ev,exec_point)
-        sendMail(voldf, ev)
+        if ev.ml.iloc[0]<mlreav:
+            plotNLLinfo(ev,exec_point)
+            tipo='normal'
+        else:
+            plotReavML(ev,voldf,exec_point)
+            tipo='REAV'
+            
+        sendMail(voldf, ev,tipo,debug)
+
+            
+          
